@@ -45,30 +45,27 @@ int main(int argc, char** argv) {
   		MPI_Send(&token, 1, MPI_INT, (rank + 1) % size, 0, MPI_COMM_WORLD);
   		MPI_Send(&cantidad_jugadores, 1, MPI_INT, (rank + 1) % size, 0, MPI_COMM_WORLD);
   	}
-  	
+
   	// 
   	while (cantidad_jugadores > 1){
   		if (rank == 0) {
   			if(sigo_en_juego == 1){
-	  			
-	  				
-		  			MPI_Recv(&token, 1, MPI_INT, size - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		  			MPI_Recv(&cantidad_jugadores, 1, MPI_INT, size - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+  				MPI_Recv(&token, 1, MPI_INT, size - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		  		MPI_Recv(&cantidad_jugadores, 1, MPI_INT, size - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		  			
-		  				if(token < 0){
-		  					printf("Proceso %d tiene la papa con valor %d (proceso %d sale del juego)\n", rank, token,rank);
-		  					token= rand()% t + 1;
-		  					cantidad_jugadores--;
+		  		if(token < 0){
+		  			printf("Proceso %d tiene la papa con valor %d (proceso %d sale del juego)\n", rank, token,rank);
+		  			token= rand()% t + 1;
+		  			cantidad_jugadores--;
 		  					
-		  					MPI_Send(&token, 1, MPI_INT, (rank + 1) % size, 0,MPI_COMM_WORLD);
-		  					MPI_Send(&cantidad_jugadores, 1, MPI_INT, (rank + 1) % size, 0,MPI_COMM_WORLD);
-		  					
-		  		
-		  					sigo_en_juego = 0;
+		  			MPI_Send(&token, 1, MPI_INT, (rank + 1) % size, 0,MPI_COMM_WORLD);
+		  			MPI_Send(&cantidad_jugadores, 1, MPI_INT, (rank + 1) % size, 0,MPI_COMM_WORLD);
+		  			sigo_en_juego = 0;
 
-		  				}
+		  		}
 
-		  				else{
+		  		else{
 		  					if(cantidad_jugadores == 1){
 		  						printf("Proceso %d es el ganador\n", rank);
 		  					}
