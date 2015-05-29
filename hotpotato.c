@@ -2,30 +2,14 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <mpi.h>
-
-
-int nuevo_token(int token){
-	
-	int x,primer_token;
-	x = rand() % token + 1;
-	primer_token = token - x;
-
-	return primer_token;
-
-}
-
-int cambiar_token(int token, int max){
-	int new_token,y;
-	y = rand() % max + 1;
-	new_token = token - y;
-
-	return new_token;
-}
+#include <time.h>
 
 int main(int argc, char** argv) {
 	int c,t;
 	int index=0;
 	srand (time(NULL));
+	
+
 
 	static struct option long_options[] = {
 		{"Token",1,NULL,'t'},
@@ -48,51 +32,64 @@ int main(int argc, char** argv) {
 		}
 	}
 	MPI_Init(NULL, NULL);
-  	int rank,size,token;
+  	int rank,size,token,sigo_en_juego=1,cantidad_jugadores,i;
   	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  	token = nuevo_token(t);
-  	int sigo_en_juego= 1;
-  	int i = 100	;
-  	
+  	token = rand()%t + 1;
+  	cantidad_jugadores = size;  	
+
   	if (rank == 0){
   		printf("Proceso %d tiene la papa con valor %d\n",rank,token);
-  		token = cambiar_token(token,t);
+  		token = token - (rand()%t + 1);
   		MPI_Send(&token, 1, MPI_INT, (rank + 1) % size, 0, MPI_COMM_WORLD);
+  		MPI_Send(&cantidad_jugadores, 1, MPI_INT, (rank + 1) % size, 0, MPI_COMM_WORLD);
   	}
-  	while (i>=10){
-	  	if (rank == 0) {
-	  		if(sigo_en_juego == 1){
+  	
+  	// 
+  	while (cantidad_jugadores > 1){
+  		if (rank == 0) {
+  			if(sigo_en_juego == 1){
 	  			
-	  				//printf("Espero desde %d a %d\n",size-1,rank );
+	  				
 		  			MPI_Recv(&token, 1, MPI_INT, size - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		  			//printf("Le recibo desde %d a %d \n",size-1,rank);
+		  			MPI_Recv(&cantidad_jugadores, 1, MPI_INT, size - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		  			
 		  				if(token < 0){
 		  					printf("Proceso %d tiene la papa con valor %d (proceso %d sale del juego)\n", rank, token,rank);
-		  					token= nuevo_token(t);
+		  					token= rand()% t + 1;
+		  					cantidad_jugadores--;
+		  					
 		  					MPI_Send(&token, 1, MPI_INT, (rank + 1) % size, 0,MPI_COMM_WORLD);
-		  			//		printf("Le envie desde %d a %d\n",rank, rank+1 );
+		  					MPI_Send(&cantidad_jugadores, 1, MPI_INT, (rank + 1) % size, 0,MPI_COMM_WORLD);
+		  					
+		  		
 		  					sigo_en_juego = 0;
 
 		  				}
 
 		  				else{
-		    				printf("Proceso %d tiene la papa con valor %d\n",rank,token);
-		    				token= cambiar_token(token,t);
+		  					if(cantidad_jugadores == 1){
+		  						printf("Proceso %d es el ganador\n", rank);
+		  					}
+		  					else{
+		    					printf("Proceso %d tiene la papa con valor %d\n",rank,token);
+		    				}
+		    				token= token - (rand()%t + 1);
 		    				MPI_Send(&token, 1, MPI_INT, (rank + 1) % size, 0, MPI_COMM_WORLD);
-		    		//		printf("Le envie desde %d a %d\n",rank, rank+1 );
+		    				MPI_Send(&cantidad_jugadores, 1, MPI_INT, (rank + 1) % size, 0, MPI_COMM_WORLD);
+		    		
 		    		}
 		    	
 		    	
 		    }
+		    // Si no sigo en juego, solamente paso el token
 	  		else{
-	  			// Si no sigo en juego, solamente paso el token
-	  			//printf("soy el procesor %d y espero \n",rank );
+	  			
 	  			MPI_Recv(&token, 1, MPI_INT, size - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-	  			//printf("Le recibo desde %d a %d\n",size-1, rank );
+	  			MPI_Recv(&cantidad_jugadores, 1, MPI_INT, size - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	  			MPI_Send(&token, 1, MPI_INT, (rank + 1) % size, 0, MPI_COMM_WORLD);
-	  			//printf("Le envie desde %d a %d\n",rank, rank+1 );
+	  			MPI_Send(&cantidad_jugadores, 1, MPI_INT, (rank + 1) % size, 0, MPI_COMM_WORLD);	
 	  		}
 	  	}
 	  	
@@ -102,20 +99,33 @@ int main(int argc, char** argv) {
 	  			
 	  				//printf("Espero desde %d a %d\n",rank-1, rank );
 	  				MPI_Recv(&token, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  				MPI_Recv(&cantidad_jugadores, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	  				//printf("Le recibo desde %d a %d\n",rank-1, rank );
 	  				if(token < 0){
 	  					printf("Proceso %d tiene la papa con valor %d (proceso %d sale del juego)\n", rank, token,rank);
-	  					token= nuevo_token(t);
+	  					token= rand()%t +1;
+	  					cantidad_jugadores=cantidad_jugadores-1;
+	  					
+	  					
 	  					MPI_Send(&token, 1, MPI_INT, (rank + 1) % size, 0,MPI_COMM_WORLD);
+	  					MPI_Send(&cantidad_jugadores, 1, MPI_INT, (rank + 1) % size, 0,MPI_COMM_WORLD);
+	  				
 	  				//	printf("Le envie desde %d a %d\n",rank, rank+1 );
 	  					sigo_en_juego = 0;
 
 	  				}
 
 	  				else{
+	  					if(cantidad_jugadores == 1){
+		  						printf("Proceso %d es el ganador\n", rank);
+		  					}
+		  				else{
 	    				printf("Proceso %d tiene la papa con valor %d\n",rank,token);
-	    				token= cambiar_token(token,t);
+	    				}
+	    				token=  token - (rand()%t + 1);
 	    				MPI_Send(&token, 1, MPI_INT, (rank + 1) % size, 0, MPI_COMM_WORLD);
+	    				MPI_Send(&cantidad_jugadores, 1, MPI_INT, (rank + 1) % size, 0, MPI_COMM_WORLD);
+	    			
 	    			//	printf("Le envie desde %d a %d\n",rank, rank+1 );
 	    		}
 	    	
@@ -126,9 +136,12 @@ int main(int argc, char** argv) {
 	  			// Si no sigo en juego, solamente paso el token
 	  			//printf("soy el procesor %d y espero \n",rank );
 	  			MPI_Recv(&token, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	  			MPI_Recv(&cantidad_jugadores, 1, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	  			//printf("soy el procesor %d y recibo \n",rank );
 	  			MPI_Send(&token, 1, MPI_INT, (rank + 1) % size, 0, MPI_COMM_WORLD);
+	  			MPI_Send(&cantidad_jugadores, 1, MPI_INT, (rank + 1) % size, 0, MPI_COMM_WORLD);
 	  			//printf("Le envie desde %d a %d\n",rank, rank+1 );
+	  			
 	  		}
 	  	
   	}
