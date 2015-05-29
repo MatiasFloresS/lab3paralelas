@@ -2,7 +2,7 @@ main:
 	@clear
 	@mpicc hotpotato.c -o hotpotato
 	@echo "Compilación exitosa..."
-	@mpirun -np 5 ./hotpotato -t 10
+	@mpirun -np 20 ./hotpotato -t 400
 
 clean:
 	@echo "Limpiando..."	
